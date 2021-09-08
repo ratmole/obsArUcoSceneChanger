@@ -139,29 +139,28 @@ def create_ArUco_source():
 
     current_scene = obs.obs_frontend_get_current_scene()
     scene = obs.obs_scene_from_source(current_scene)
-    scene_item = obs.obs_scene_find_source(scene, newSourceName)
 
     settings = obs.obs_data_create()
 
-    if not scene_item:
-        ScSourceArUco = obs.obs_source_create_private("v4l2_input", newSourceName, settings)
-        obs.obs_data_set_string(settings, "resolution", newSourceResolution)
+    ScSourceArUco = obs.obs_source_create_private("v4l2_input", newSourceName, settings)
+    obs.obs_data_set_string(settings, "resolution", newSourceResolution)
 
-        obs.obs_data_set_string(settings, "device_id", clone )
-        obs.obs_data_set_bool(settings, "auto_reset", True )
-        obs.obs_data_set_int(settings, "timeout_frames", 50 )
-        obs.obs_data_set_bool(settings, "buffering", False);
-        ScSourceArUco = obs.obs_source_create_private("v4l2_input", newSourceName, settings)
-        obs.obs_data_set_string(settings, "resolution", newSourceResolution)
-        scale = obs.obs_source_create_private("scale_filter", "Scale", settings)
-        obs.obs_source_filter_add(ScSourceArUco, scale)   
+    obs.obs_data_set_string(settings, "device_id", clone )
+    obs.obs_data_set_bool(settings, "auto_reset", True )
+    obs.obs_data_set_int(settings, "timeout_frames", 50 )
+    obs.obs_data_set_bool(settings, "buffering", False);
+    ScSourceArUco = obs.obs_source_create_private("v4l2_input", newSourceName, settings)
+    obs.obs_data_set_string(settings, "resolution", newSourceResolution)
+    scale = obs.obs_source_create_private("scale_filter", "Scale", settings)
+    obs.obs_source_filter_add(ScSourceArUco, scale)   
     
-        obs.obs_scene_add(scene, ScSourceArUco)
-        obs.obs_data_release(settings)
-        obs.obs_source_release(ScSourceArUco)
-        
-        obs.obs_scene_release(scene)
-        obs.obs_sceneitem_set_order(scene_item,obs.OBS_ORDER_MOVE_BOTTOM)
+    obs.obs_scene_add(scene, ScSourceArUco)
+    obs.obs_data_release(settings)
+    obs.obs_source_release(ScSourceArUco)
+      
+    obs.obs_scene_release(scene)
+    scene_item = obs.obs_scene_find_source(scene, newSourceName)
+    obs.obs_sceneitem_set_order(scene_item,obs.OBS_ORDER_MOVE_BOTTOM)
 
 
 def findArucoMarkers(frame):
