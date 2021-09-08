@@ -7,7 +7,6 @@ import glob
 import ffmpeg
 import threading
 import subprocess
-import multiprocessing
 import numpy as np
 import obspython as obs
 import cv2.aruco as aruco
