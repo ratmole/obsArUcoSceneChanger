@@ -39,8 +39,9 @@ def script_properties():
 
     sceneFrom = obs.obs_properties_add_list(props, "sceneFrom", "Scene From", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
     sceneTo = obs.obs_properties_add_list(props, "sceneTo", "Scene To", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
+    
+    sourceName = obs.obs_properties_add_list(props, "sourceName", "V4L2 Source To", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
         
-    obs.obs_properties_add_text(props, "sourceName", "Source Name", obs.OBS_TEXT_DEFAULT)
 
     for device in devices:
         obs.obs_property_list_add_string(source, device, device)
@@ -55,6 +56,13 @@ def script_properties():
         name = obs.obs_source_get_name(scene)
         obs.obs_property_list_add_string(sceneFrom, name, name)
         obs.obs_property_list_add_string(sceneTo, name, name)
+ 
+    obs.source_list_release(scenes)
+    ScSources = obs.obs_enum_sources()
+
+    for ScSource_ in ScSources:
+        name = obs.obs_source_get_name(ScSource_)
+        obs.obs_property_list_add_string(sourceName, name, name)
  
     obs.source_list_release(scenes)
 
