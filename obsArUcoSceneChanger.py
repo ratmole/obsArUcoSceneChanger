@@ -225,7 +225,6 @@ def run():
     start_ffmpeg(source,clone)
     
     cam = cv2.VideoCapture(clone)
-    cv2_version_major = int(cv2.__version__.split('.')[0])
 
     set_current_scene(sceneFrom)
     updateSource()
