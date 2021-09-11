@@ -26,6 +26,7 @@ def script_description():
     return "OBS ArUco Scene Switcher.\nClones and monitors a camera for ArUco markers.\nWhen a marker is detected, it switches to the specified scene.\n\nBy raTMole\nv0.1"
 
 def script_properties():
+    tmp = []
     devices = [f for f in glob.glob("/dev/video*")]
     devices.sort()
     ArUcoDicts = ['DICT_4X4_50','DICT_4X4_100','DICT_4X4_250','DICT_4X4_1000','DICT_5X5_50','DICT_5X5_100','DICT_5X5_250','DICT_5X5_1000','DICT_6X6_50','DICT_6X6_100','DICT_6X6_250','DICT_6X6_1000','DICT_7X7_50','DICT_7X7_100','DICT_7X7_250','DICT_7X7_1000','DICT_ARUCO_ORIGINAL','DICT_APRILTAG_16h5','DICT_APRILTAG_25h9','DICT_APRILTAG_36h10','DICT_APRILTAG_36h11']
@@ -58,13 +59,18 @@ def script_properties():
         obs.obs_property_list_add_string(sceneTo, name, name)
  
     obs.source_list_release(scenes)
-    ScSources = obs.obs_enum_sources()
 
-    for ScSource_ in ScSources:
-        name = obs.obs_source_get_name(ScSource_)
-        obs.obs_property_list_add_string(sourceName, name, name)
- 
-    obs.source_list_release(scenes)
+    ScSources = obs.obs_enum_sources()
+    if ScSources is not None:
+        for source_ in ScSources:
+            source_id = obs.obs_source_get_id(source_)
+            if source_id == "v4l2_input":
+                name = obs.obs_source_get_name(source_)
+                if name not in tmp:
+                    obs.obs_property_list_add_string(sourceName, name, name)
+                    tmp.append(name)
+
+        obs.source_list_release(ScSources)
 
     return props
 
