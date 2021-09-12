@@ -10,11 +10,14 @@ import subprocess
 import numpy as np
 import obspython as obs
 import cv2.aruco as aruco
+import v4l2ctl
 
 count = 0
 timeout = 0
 
 global source
+global sourceFormat
+global sourceFormats
 global clone
 global sceneFrom
 global sceneTo
@@ -29,11 +32,13 @@ def script_properties():
     tmp = []
     devices = [f for f in glob.glob("/dev/video*")]
     devices.sort()
+
     ArUcoDicts = ['DICT_4X4_50','DICT_4X4_100','DICT_4X4_250','DICT_4X4_1000','DICT_5X5_50','DICT_5X5_100','DICT_5X5_250','DICT_5X5_1000','DICT_6X6_50','DICT_6X6_100','DICT_6X6_250','DICT_6X6_1000','DICT_7X7_50','DICT_7X7_100','DICT_7X7_250','DICT_7X7_1000','DICT_ARUCO_ORIGINAL','DICT_APRILTAG_16h5','DICT_APRILTAG_25h9','DICT_APRILTAG_36h10','DICT_APRILTAG_36h11']
 
     props = obs.obs_properties_create()
 
     source = obs.obs_properties_add_list(props, "source", "Source Video Device", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
+    sourceFormat = obs.obs_properties_add_list(props, "sourceFormat", "Source Video Format", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
     clone = obs.obs_properties_add_list(props, "clone", "Cloned Video Device", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
 
     ArDicts = obs.obs_properties_add_list(props, "ArUcoDict", "ArUco Dictionary", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
@@ -47,7 +52,10 @@ def script_properties():
     for device in devices:
         obs.obs_property_list_add_string(source, device, device)
         obs.obs_property_list_add_string(clone, device, device)
-        
+ 
+    for source_f in sourceFormats:
+        obs.obs_property_list_add_string(sourceFormat, source_f, source_f)
+       
     for ArUcoDict in ArUcoDicts:
         obs.obs_property_list_add_string(ArDicts, ArUcoDict, ArUcoDict)
 
@@ -86,16 +94,16 @@ def stop_ffmpeg():
             os.system("rm "+pid)
 
 
-def start_ffmpeg(source,clone):
+def start_ffmpeg(source,clone,sourceFormat):
     global ProcessF
 
     pid = "/tmp/obsArUco.pid"
 
     process = (
         ffmpeg
-        .input(source, f="v4l2")
-        .output(clone, f="v4l2")
-        .global_args('-loglevel', 'quiet')
+        .input(source, f="v4l2", pix_fmt=sourceFormat,r="30")
+        .output(clone, f="v4l2", pix_fmt="yuyv422")
+        .global_args('-loglevel', 'warning')
         .overwrite_output()
     )
     ProcessF = process.run_async(pipe_stdin=True)        
@@ -105,13 +113,13 @@ def start_ffmpeg(source,clone):
     pidfile.write(str(ProcessF.pid))
     pidfile.close()
 
-
 def script_unload():
     stop_ffmpeg()
 
 
 def script_load(settings):
     global source
+    global sourceFormat
     global clone
     global sceneFrom
     global sceneTo
@@ -119,14 +127,17 @@ def script_load(settings):
     global sourceName
 
     source              = obs.obs_data_get_string(settings, "source")
+    sourceFormat        = obs.obs_data_get_string(settings, "sourceFormat")
     clone               = obs.obs_data_get_string(settings, "clone")
     sceneFrom           = obs.obs_data_get_string(settings, "sceneFrom")
     sceneTo             = obs.obs_data_get_string(settings, "sceneTo")
     ArUcoDict           = obs.obs_data_get_string(settings, "ArUcoDict")
     sourceName          = obs.obs_data_get_string(settings, "sourceName")
+    source_formats(source)
 
 def script_update(settings):
     global source
+    global sourceFormat
     global clone
     global sceneFrom
     global sceneTo
@@ -134,11 +145,20 @@ def script_update(settings):
     global sourceName
 
     source              = obs.obs_data_get_string(settings, "source")
+    sourceFormat        = obs.obs_data_get_string(settings, "sourceFormat")
     clone               = obs.obs_data_get_string(settings, "clone")
     sceneFrom           = obs.obs_data_get_string(settings, "sceneFrom")
     sceneTo             = obs.obs_data_get_string(settings, "sceneTo")
     ArUcoDict           = obs.obs_data_get_string(settings, "ArUcoDict")
     sourceName          = obs.obs_data_get_string(settings, "sourceName")
+
+def source_formats(source):
+    global sourceFormats
+
+    sourceFormats = []
+    d = v4l2ctl.V4l2Device(source)
+    for f in d.formats:
+        sourceFormats.append(f"{f.format.name}".lower())
 
 def set_current_scene(newName):
     scenes = obs.obs_frontend_get_scenes()
@@ -199,17 +219,19 @@ def findArucoMarkers(frame):
 def run():
 
     global source
+    global sourceFormat
     global clone
     global sceneFrom
     global sceneTo
     global ArUcoDict
     global sourceName
     global ProcessF
+    
 
     if not module_loaded('v4l2loopback'):
         obs.script_log(obs.LOG_ERROR, "v4l2loopback module missing!\nScript will not work!\nPlease install v4l2loopback module and run:\nsudo modprobe v4l2loopback devices=2")
         return
-
+    
     if not source or not clone:
         obs.script_log(obs.LOG_WARNING, "Please set Source and Clone Video Device and reload the script")
         return
@@ -227,8 +249,8 @@ def run():
         return
 
     stop_ffmpeg()
-
-    start_ffmpeg(source,clone)
+    
+    start_ffmpeg(source,clone,sourceFormat)
     
     cam = cv2.VideoCapture(clone)
 
