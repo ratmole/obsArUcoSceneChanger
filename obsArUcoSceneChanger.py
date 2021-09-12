@@ -236,6 +236,10 @@ def run():
         obs.script_log(obs.LOG_WARNING, "Please set Source and Clone Video Device and reload the script")
         return
 
+    if not sourceFormat:
+        obs.script_log(obs.LOG_WARNING, "Please set Source Video Format and reload the script")
+        return
+
     if not sceneFrom or not sceneTo:
         obs.script_log(obs.LOG_WARNING, "Please set Scene From and Scene To and reload the script")
         return
