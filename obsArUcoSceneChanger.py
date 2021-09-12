@@ -24,11 +24,15 @@ global sceneTo
 global ArUcoDict
 global sourceName
 global ProcessF
+sourceFormats = []
 
 def script_description():
     return "OBS ArUco Scene Switcher.\nClones and monitors a camera for ArUco markers.\nWhen a marker is detected, it switches to the specified scene.\n\nBy raTMole\nv0.1"
 
 def script_properties():
+
+    global sourceFormats
+
     tmp = []
     devices = [f for f in glob.glob("/dev/video*")]
     devices.sort()
@@ -52,7 +56,7 @@ def script_properties():
     for device in devices:
         obs.obs_property_list_add_string(source, device, device)
         obs.obs_property_list_add_string(clone, device, device)
- 
+
     for source_f in sourceFormats:
         obs.obs_property_list_add_string(sourceFormat, source_f, source_f)
        
@@ -133,7 +137,9 @@ def script_load(settings):
     sceneTo             = obs.obs_data_get_string(settings, "sceneTo")
     ArUcoDict           = obs.obs_data_get_string(settings, "ArUcoDict")
     sourceName          = obs.obs_data_get_string(settings, "sourceName")
-    source_formats(source)
+
+    if source:
+        source_formats(source)
 
 def script_update(settings):
     global source
