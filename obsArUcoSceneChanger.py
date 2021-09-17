@@ -22,6 +22,7 @@ global clone
 global sceneFrom
 global sceneTo
 global ArUcoDict
+global ArUcoID
 global sourceName
 global ProcessF
 sourceFormats = []
@@ -46,6 +47,8 @@ def script_properties():
     clone = obs.obs_properties_add_list(props, "clone", "Cloned Video Device", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
 
     ArDicts = obs.obs_properties_add_list(props, "ArUcoDict", "ArUco Dictionary", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
+    obs.obs_properties_add_int(props, "ArUcoID", "ArUco Id", 1, 999, 1)
+
 
     sceneFrom = obs.obs_properties_add_list(props, "sceneFrom", "Scene From", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
     sceneTo = obs.obs_properties_add_list(props, "sceneTo", "Scene To", obs.OBS_COMBO_TYPE_EDITABLE, obs.OBS_COMBO_FORMAT_STRING)
@@ -128,6 +131,7 @@ def script_load(settings):
     global sceneFrom
     global sceneTo
     global ArUcoDict
+    global ArUcoID
     global sourceName
 
     source              = obs.obs_data_get_string(settings, "source")
@@ -136,6 +140,7 @@ def script_load(settings):
     sceneFrom           = obs.obs_data_get_string(settings, "sceneFrom")
     sceneTo             = obs.obs_data_get_string(settings, "sceneTo")
     ArUcoDict           = obs.obs_data_get_string(settings, "ArUcoDict")
+    ArUcoID             = obs.obs_data_get_int(settings, "ArUcoID")
     sourceName          = obs.obs_data_get_string(settings, "sourceName")
 
     if source:
@@ -156,6 +161,7 @@ def script_update(settings):
     sceneFrom           = obs.obs_data_get_string(settings, "sceneFrom")
     sceneTo             = obs.obs_data_get_string(settings, "sceneTo")
     ArUcoDict           = obs.obs_data_get_string(settings, "ArUcoDict")
+    ArUcoID             = obs.obs_data_get_int(settings, "ArUcoID")
     sourceName          = obs.obs_data_get_string(settings, "sourceName")
 
 def source_formats(source):
@@ -190,7 +196,6 @@ def updateSource():
     settings = obs.obs_source_get_settings(sourceItem)
     obs.obs_data_set_string(settings, "device_id", clone )
     obs.obs_source_update(sourceItem, settings)
-    obs.obs_source_update(sourceItem, settings)
     obs.obs_data_release(settings)
 
 def findArucoMarkers(frame):
@@ -201,6 +206,7 @@ def findArucoMarkers(frame):
     global sceneFrom
     global sceneTo
     global ArUcoDict
+    global ArUcoID
 
     img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -212,10 +218,11 @@ def findArucoMarkers(frame):
 
     if draw:
         if np.all(ids is not None):  # If there are markers found by detector
-            if count == 0:
-                set_current_scene(sceneTo)
-            count += 1
-            timeout=0
+            if ArUcoID in ids:
+                if count == 0:
+                    set_current_scene(sceneTo)
+                count += 1
+                timeout=0
         else:
             if count > 1:
                 if timeout > 25:
